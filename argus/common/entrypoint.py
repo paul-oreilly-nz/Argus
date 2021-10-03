@@ -23,19 +23,11 @@ class Entrypoint():
         self.args = arguements
         self.module_run_map = {
                 'caterpillar': self._run_caterpillar,
-                'janitor': self._run_janitor,
-                'presenter-curses': self._run_presenter_curses,
-                'reporter': self._run_reporter,
-                'trickster': self._run_trickster,
                 'faker': self._run_faker
                 }
         self.module_test_map = {
                 'common': self._test_common,
                 'caterpillar': self._test_caterpillar,
-                'janitor': self._test_janitor,
-                'presenter-curses': self._test_presenter_curses,
-                'reporter': self._test_reporter,
-                'trickster': self._test_trickster,
                 'faker': self._test_faker
             }
         self.app = None
@@ -55,22 +47,6 @@ class Entrypoint():
         from argus.caterpillar.Caterpillar import Caterpillar
         self.app = Caterpillar()
         self.app.run()
-    def _run_janitor( self ):
-        from argus.janitor.Janitor import Janitor
-        self.app = Janitor()
-        self.app.run()
-    def _run_presenter_curses( self ):
-        from argus.presenter.curses.Presenter import Presenter
-        self.app = Presenter()
-        self.app.run()
-    def _run_reporter( self ):
-        from argus.reporter.Reporter import Reporter
-        self.app = Reporter()
-        self.app.run()
-    def _run_trickster( self ):
-        from argus.trickster.Trickster import Trickster
-        self.app=Trickster()
-        self.app.run()
     def _run_faker( self ):
         from argus.faker.Faker import Faker
         self.app=Faker()
@@ -81,18 +57,6 @@ class Entrypoint():
     def _test_caterpillar( self ):
         import doctest
         doctest.testmod(argus.caterpillar.Caterpillar)
-    def _test_janitor( self ):
-        import doctest
-        doctest.testmod(argus.janitor.Janitor)
-    def _test_presenter_curses( self ):
-        import doctest
-        doctest.testmod(argus.presenter.curses.Presentor)
-    def _test_reporter( self ):
-        import doctest
-        doctest.testmod(argus.reporter.Reporter)
-    def _test_trickster( self ):
-        import doctest
-        doctest.testmod(argus.trickster.Trickster)
     def _test_faker( self ):
         import doctest
         doctest.testmod( argus.faker.Faker)
