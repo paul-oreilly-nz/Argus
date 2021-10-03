@@ -17,6 +17,13 @@ services:
     volumes:
       - ~/argus/secrets:/app/secrets
     env_file:
-      - ~/argus/env.kafka
+      - ~/argus/env.caterpillar
 
-
+  argus-terminal:
+    container_name: argus-terminal
+    image: argus-terminal:latest
+    restart: "no"
+    volumes:
+      - ~/argus/secrets:/app/secrets
+    env_file:
+      - ~/argus/env.caterpillar
