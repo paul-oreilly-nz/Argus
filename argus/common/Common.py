@@ -8,7 +8,7 @@ class LogLevel( Enum ):
     DEBUG = 2
     INFO = 3
     WARNING = 4
-    CRITIAL = 5
+    CRITICAL = 5
     NONRECOVERALE = 6
 
 class CommonAppFramework():

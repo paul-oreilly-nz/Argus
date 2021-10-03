@@ -1,0 +1,22 @@
+version: "2.4"
+
+services:
+  argus-faker:
+    container_name: argus-faker
+    image: argus-faker:latest
+    restart: "no"
+    volumes:
+      - ~/argus/secrets:/app/secrets
+    env_file:
+      - ~/argus/env.kafka
+    
+  argus-caterpillar:
+    container_name: argus-caterpillar
+    image: argus-caterpillar:latest
+    restart: "no"
+    volumes:
+      - ~/argus/secrets:/app/secrets
+    env_file:
+      - ~/argus/env.kafka
+
+

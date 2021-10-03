@@ -1,2 +1,2 @@
 docopt
-colander
+colander==1.8.3

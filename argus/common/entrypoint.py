@@ -26,7 +26,8 @@ class Entrypoint():
                 'janitor': self._run_janitor,
                 'presenter-curses': self._run_presenter_curses,
                 'reporter': self._run_reporter,
-                'trickster': self._run_trickster
+                'trickster': self._run_trickster,
+                'faker': self._run_faker
                 }
         self.module_test_map = {
                 'common': self._test_common,
@@ -34,7 +35,8 @@ class Entrypoint():
                 'janitor': self._test_janitor,
                 'presenter-curses': self._test_presenter_curses,
                 'reporter': self._test_reporter,
-                'trickster': self._test_trickster
+                'trickster': self._test_trickster,
+                'faker': self._test_faker
             }
         self.app = None
 
@@ -69,6 +71,10 @@ class Entrypoint():
         from argus.trickster.Trickster import Trickster
         self.app=Trickster()
         self.app.run()
+    def _run_faker( self ):
+        from argus.faker.Faker import Faker
+        self.app=Faker()
+        self.app.run()
     def _test_common( self ):
         import doctest
         doctest.testmod(argus.common.Common)
@@ -87,11 +93,14 @@ class Entrypoint():
     def _test_trickster( self ):
         import doctest
         doctest.testmod(argus.trickster.Trickster)
+    def _test_faker( self ):
+        import doctest
+        doctest.testmod( argus.faker.Faker)
 
 
 if __name__ == "__main__":
     import sys
-    sys.path.append('/app')  
+    sys.path.append('/app') 
     arguements = docopt( __doc__, version='Entrypoint 0.1')
     entrypoint = Entrypoint( arguements )
     entrypoint.run()

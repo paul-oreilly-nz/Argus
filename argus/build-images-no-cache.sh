@@ -5,9 +5,10 @@ build() {
 }
 
 build common
-build trickster
+#build trickster
 build caterpillar
-build janitor
-build reporter
-cd presenter
-build curses
+#build janitor
+#build reporter
+build faker
+#cd presenter
+#build curses
