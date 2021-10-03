@@ -10,5 +10,5 @@ build caterpillar
 #build janitor
 #build reporter
 build faker
-#cd presenter
-#build curses
+cd presenter
+build terminal

@@ -2,9 +2,11 @@ from argus.common.Common import CommonAppFramework, LogLevel
 from argus.common.data import schema
 from argus.common.KafkaConnection import KafkaConnection
 
-import math
+import sys
 import random
 from datetime import datetime
+from time import sleep
+
 
 class Faker( CommonAppFramework ):
     def __init__(self):
@@ -18,7 +20,12 @@ class Faker( CommonAppFramework ):
 
     def run(self):
         self.kafka.start_producer()
-        self.kafka.send( data=self.fake_heartbeat_data(), deserializer_name='heartbeat')
+        # run for a minute, then terminate
+        for i in range(60):
+            self.log("Generating a fake record to send to Kafka")
+            self.kafka.send( data=self.fake_heartbeat_data(), deserializer_name='heartbeat')
+            sys.stdout.flush()
+            sleep(1)
     
     def set_limits(self, cpu_count=4):
         self.cpu_count=cpu_count
