@@ -23,11 +23,21 @@ class PostgresConnection:
             )
 
     def connect(self):
-        self.cursor = None
         try:
             self.db_connection = psycopg2.connect(self.url)
         except Exception as e:
             app.log(
                 "Exception encountered while connecting to Postgres: {}".format(str(e)),
+                LogLevel.WARNING,
+            )
+
+    def disconnect(self):
+        try:
+            self.db_connection.close()
+        except Exception as e:
+            app.log(
+                "Exception encountered while closing connection to Postgres. {}".format(
+                    str(e)
+                ),
                 LogLevel.WARNING,
             )

@@ -1,3 +1,7 @@
+"""
+Caterpillar consumes data from Kafka, digests that data (to ensure it passes schema validation), transforms those records and adds them to the Postgres database.
+"""
+
 from argus.common.Common import CommonAppFramework, LogLevel
 from argus.common.data import schema
 from argus.common.KafkaConnection import KafkaConnection
@@ -9,13 +13,20 @@ import sys
 
 class Caterpillar(CommonAppFramework):
     def __init__(self):
+        """
+        Creates both Kafta and Postgres connection objects
+        """
         super().__init__()
-        # we need a kafta connection, and schema objects
         self.kafka = KafkaConnection(self)
         self.schema = schema.full_colander_set()
         self.postgres = PostgresConnection(self)
 
     def run(self):
+        """
+        Connects to both Kafka and Postgres, checking that the Postgres table 
+        required is in place and takes around a minute to fetch objects from Kafka, 
+        check conformance and submit to Postgres.
+        """
         # start the sevices we will need
         self.kafka.start_consumer()
         self.postgres.connect()
@@ -31,6 +42,9 @@ class Caterpillar(CommonAppFramework):
             sleep(1)
 
     def _check_postgres(self):
+        """
+        If the 'heartbeat' table does not exist, this will create that table.
+        """
         cursor = self.postgres.db_connection.cursor()
         cursor.execute("SELECT current_database()")
         database = cursor.fetchone()[0]
@@ -57,6 +71,12 @@ class Caterpillar(CommonAppFramework):
         cursor.close()
 
     def conform_data(self, data_list):
+        """
+        Conform checks that the data we have retrieved from Kafka fits the schemas, so
+        we can be reasonbly confident that we are not sumbitting poor data to Postgres.
+        This relies on the deserializer value inside the data packat which allows us
+        to look up which schema
+        """
         results = []
         for item in data_list:
             value = json.loads(item.value.decode())
@@ -110,6 +130,10 @@ class Caterpillar(CommonAppFramework):
         return results
 
     def commit_to_db(self, data_list):
+        """
+        With a list of valid (heartbeat) data, this will add the data from that
+        list in to the Postgres database.
+        """
         cursor = self.postgres.db_connection.cursor()
         for item in data_list:
             # We can combine some of the data here, and make a new json string

@@ -20,6 +20,9 @@ class CommonAppFramework:
     """
 
     def __init__(self):
+        """
+        Sets up default logging options
+        """
         self.log_output = {}
         # set debug logging options
         self.log_output[LogType.CONSOLE] = True

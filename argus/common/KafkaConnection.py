@@ -90,45 +90,100 @@ class KafkaConnection:
             if not os.path.isfile(path):
                 raise FileNotFoundError(path)
 
-    def start_producer(self):
-        self.producer = KafkaProducer(
-            bootstrap_servers="{}:{}".format(self.env["host"], self.env["port"]),
-            security_protocol="SSL",
-            ssl_cafile=self.env["ca_cert_file"],
-            ssl_certfile=self.env["access_cert_file"],
-            ssl_keyfile=self.env["key_file"],
-            value_serializer=lambda v: json.dumps(v).encode("ascii"),
-            key_serializer=lambda v: json.dumps(v).encode("ascii"),
-            api_version=(2, 6, 0),
-        )
+    def start_producer(self, exception_passthrough=False):
+        """ 
+        Connects to Kafka in a producter role.
+        If set, 'exception_passthough' will raise any exception generated to be 
+        managed upstream. Default behaviour is to log and ignore.
+        """
+        try:
+            self.producer = KafkaProducer(
+                bootstrap_servers="{}:{}".format(self.env["host"], self.env["port"]),
+                security_protocol="SSL",
+                ssl_cafile=self.env["ca_cert_file"],
+                ssl_certfile=self.env["access_cert_file"],
+                ssl_keyfile=self.env["key_file"],
+                value_serializer=lambda v: json.dumps(v).encode("ascii"),
+                key_serializer=lambda v: json.dumps(v).encode("ascii"),
+                api_version=(2, 6, 0),
+            )
+        except Exception as e:
+            self.app.log(
+                "Unable to establish connection to Kafka. {}".format(str(e)),
+                LogLevel.CRITICAL,
+            )
+            if exception_passthrough:
+                raise e
 
-    def start_consumer(self):
-        self.consumer = KafkaConsumer(
-            self.env["topic"],
-            auto_offset_reset="earliest",
-            bootstrap_servers="{}:{}".format(self.env["host"], self.env["port"]),
-            client_id=self.env["id"],
-            group_id=self.env["group"],
-            security_protocol="SSL",
-            ssl_cafile=self.env["ca_cert_file"],
-            ssl_certfile=self.env["access_cert_file"],
-            ssl_keyfile=self.env["key_file"],
-            api_version=(2, 6, 0),
-        )
-        self.consumer_has_had_initial_call = False
+    def start_consumer(self, exception_passthrough=False):
+        """
+        Connects to Kafka in a consumer role.
+        If set, 'exception_passthrough' will raise any exception generated upstream.
+        """
+        try:
+            self.consumer = KafkaConsumer(
+                self.env["topic"],
+                auto_offset_reset="earliest",
+                bootstrap_servers="{}:{}".format(self.env["host"], self.env["port"]),
+                client_id=self.env["id"],
+                group_id=self.env["group"],
+                security_protocol="SSL",
+                ssl_cafile=self.env["ca_cert_file"],
+                ssl_certfile=self.env["access_cert_file"],
+                ssl_keyfile=self.env["key_file"],
+                api_version=(2, 6, 0),
+            )
+            self.consumer_has_had_initial_call = False
+        except Exception as e:
+            self.app.log(
+                "Unable to establish connection to Kafka. {}".format(str(e)),
+                LogLevel.CRITICAL,
+            )
+            if exception_passthrough:
+                raise e
 
-    def send(self, deserializer_name, data):
+    def send(self, deserializer_name, data, exception_passthrough=False):
+        """
+        Sends a packet of data to Kafka, including the deserializer_name
+        that is used on the other end to verify the data recieved.
+        'exception_passthrough' will pass up any exception generated.
+        """
         msg_data = {
             "id": self.env["id"],
             "deserializer": deserializer_name,
             "data": data,
         }
         key = {"key": self.env["id"]}
-        self.producer.send(self.env["topic"], msg_data, key)
-        self.producer.flush()
+        try:
+            self.producer.send(self.env["topic"], msg_data, key)
+            self.producer.flush()
+        except Exception as e:
+            self.app.log(
+                "Error sending message to Kafka. {}".format(str(e)), LogLevel.WARNING
+            )
+            if exception_passthrough:
+                raise e
 
-    def fetch(self):
-        raw_msg = self.consumer.poll(timeout_ms=self.env["timeout"])
+    def fetch(self, exception_passthrough=False):
+        """
+        Fetches data from Kafka and returns the result. 
+        If this is the first call, it will call itself again as documentation references
+        the first call only assigning a topic partition and not returning any of the
+        data included.
+        'exception_passthrough' will pass up any exception generated
+        """
+        try:
+            raw_msg = self.consumer.poll(timeout_ms=self.env["timeout"])
+        except Exception as e:
+            self.app.log(
+                "Error encountered while polling Kafka for new objects. {}".format(
+                    str(e)
+                ),
+                LogLevel.WARNING,
+            )
+            if exception_passthrough:
+                raise e
+            return []
         result = []
         for topic_partition, msgs in raw_msg.items():
             for msg in msgs:

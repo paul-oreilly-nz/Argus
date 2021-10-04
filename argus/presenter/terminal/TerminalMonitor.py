@@ -25,8 +25,10 @@ from pprint import pprint
 
 class TerminalMonitor:
     def __init__(self, args):
+        """
+        Sets up to connect to Postgres and initialises default values
+        """
         from argus.common.PostgresConnection import PostgresConnection
-
         self.log_buffer = []
         self.postgres = PostgresConnection(self)
         self.latest = {}
@@ -40,9 +42,16 @@ class TerminalMonitor:
         self.target = self.args.get("<provider_id>")
 
     def log(self, message, level):
+        """
+        Logging function also provided for (and used by) the PostgresConnection object
+        """
         self.log_buffer.append(message)
 
-    def run(self):
+    def run(self, exception_passthrough=False):
+        """
+        Connects to postgres, and then depending on if 'run_once' is set or not,
+        will generate and loop over a display until terminated.
+        """
         # establish the postgres connection
         self.postgres.connect()
         # just show one screen if 'run-once' is set
@@ -59,7 +68,12 @@ class TerminalMonitor:
             print("Press Ctl-C to terminate")
             pass
 
-    def fetch_latest_data(self):
+    def fetch_latest_data(self, exception_passthrough=False):
+        """
+        Queries Postgres for the last heartbeat record from a given producer_id
+        (set by self.target)
+        'exception_passthrough' will pass any exceptions generated up the chain
+        """
         try:
             cursor = self.postgres.db_connection.cursor()
             cursor.execute(
@@ -71,8 +85,14 @@ class TerminalMonitor:
             self.latest = cursor.fetchall()[0]
         except Exception as e:
             self.log("Error encountered while fetching data {}".format(str(e)))
+            if exception_passthrough:
+                raise e
 
     def update_display(self):
+        """
+        Clears the terminal and displays formatted data taken from the last
+        entry for the given provider_id
+        """
         self.clear_cmd()
         print("Argus Terminal Monitor - {}\n\n".format(self.target))
         data = self.latest[2].get("data", {}).get("data", {})
