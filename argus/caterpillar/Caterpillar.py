@@ -129,19 +129,35 @@ class Caterpillar(CommonAppFramework):
             )
         return results
 
-    def commit_to_db(self, data_list):
+    def commit_to_db(self, data_list, exception_passthrough=False):
         """
         With a list of valid (heartbeat) data, this will add the data from that
         list in to the Postgres database.
+        'exception_passthrough' will pass any exceptions up the chain
         """
-        cursor = self.postgres.db_connection.cursor()
+        try:
+            cursor = self.postgres.db_connection.cursor()
+        except Exception as e:
+            self.log("Error while creating database cursor object. {}".format(str(e)),
+                    LogLevel.CRITICAL)
+            if exception_passthrough:
+                raise e
+            return
         for item in data_list:
             # We can combine some of the data here, and make a new json string
             as_json = json.dumps({"data": item["raw"], "meta": item["meta"]})
             # which we then insert into the database
-            cursor.execute(
-                "INSERT INTO heartbeat (producer_id, info) "
-                " VALUES( '{}', '{}');".format(item["meta"]["kafta_id"], as_json)
-            )
-            self.postgres.db_connection.commit()
-        self.log("{} item(s) added to the postgres database".format(len(data_list)))
+            try:
+                cursor.execute(
+                    "INSERT INTO heartbeat (producer_id, info) "
+                    " VALUES( '{}', '{}');".format(item["meta"]["kafta_id"], as_json)
+                )
+                self.postgres.db_connection.commit()
+            except Exception as e:
+                self.log("Error encountered while commiting " \
+                         "new record to database. {}".format( str(e)),
+                         LogLevel.WARNING)
+                if exception_passthrough:
+                    raise e
+                continue
+        self.log("{} item(s) processed".format(len(data_list)))
