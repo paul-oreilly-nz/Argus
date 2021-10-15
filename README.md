@@ -50,6 +50,9 @@ Following docker's best practice, containers are a single thread / item only, an
 Planned Additions
 =================
 
+End to End Testing
+Generate sets of fake data, send via Kafka, consume as pr normal into Postgres, and verify 
+from Postgres that the data has correctly passed through the entire chain.
 
 Reporter
 Using pyutil, the next item on the roadmap is to monitor real CPU's rather than pretend ones
